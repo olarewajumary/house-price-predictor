@@ -28,11 +28,13 @@ def handle_missing(df):
 
 def encode_categoricals(df):
     df = df.copy()
-    le = LabelEncoder()
+    encoders = {}
     cat_cols = df.select_dtypes(include='object').columns.tolist()
     for col in cat_cols:
+        le = LabelEncoder()
         df[col] = le.fit_transform(df[col].astype(str))
-    return df
+        encoders[col] = le
+    return df, encoders
 
 
 def scale_features(df, target='SalePrice'):
