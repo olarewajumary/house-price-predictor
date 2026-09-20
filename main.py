@@ -16,7 +16,7 @@ def main():
 
     df = handle_missing(df)
     defaults = df.drop(columns=['SalePrice']).median(numeric_only=True).to_dict()
-    for col in df.select_dtypes(include='object').columns:
+    for col in df.select_dtypes(include=['object', 'str']).columns:
         defaults[col] = df[col].mode()[0]
     df, encoders = encode_categoricals(df)
     df, scaler = scale_features(df)

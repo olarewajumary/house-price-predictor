@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.model_selection import GridSearchCV
 from sklearn.linear_model import Ridge
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score
@@ -12,10 +13,11 @@ def split_data(df, target='SalePrice'):
 
 
 def train_model(X_train, y_train):
-    model = Ridge(alpha=10)
-    model.fit(X_train, y_train)
-    return model
-
+    param_grid = {'alpha': [0.1, 1, 5, 10, 20, 50, 100]}
+    grid = GridSearchCV(Ridge(), param_grid, cv=5, scoring='neg_mean_squared_error')
+    grid.fit(X_train, y_train)
+    print(f"Best alpha found: {grid.best_params_['alpha']}")
+    return grid.best_estimator_
 
 def evaluate_model(model, X_test, y_test):
     predictions = model.predict(X_test)

@@ -22,28 +22,31 @@ neighborhood = st.selectbox("Neighborhood", list(encoders['Neighborhood'].classe
 exter_qual = st.selectbox("Exterior Quality", list(encoders['ExterQual'].classes_))
 
 if st.button("Predict Price"):
-    row = defaults.copy()
+    try:
+        row = defaults.copy()
 
-    row['OverallQual'] = overall_qual
-    row['GrLivArea'] = gr_liv_area
-    row['TotalBsmtSF'] = total_bsmt_sf
-    row['GarageCars'] = garage_cars
-    row['YearBuilt'] = year_built
-    row['FullBath'] = full_bath
-    row['Neighborhood'] = neighborhood
-    row['ExterQual'] = exter_qual
+        row['OverallQual'] = overall_qual
+        row['GrLivArea'] = gr_liv_area
+        row['TotalBsmtSF'] = total_bsmt_sf
+        row['GarageCars'] = garage_cars
+        row['YearBuilt'] = year_built
+        row['FullBath'] = full_bath
+        row['Neighborhood'] = neighborhood
+        row['ExterQual'] = exter_qual
 
-    input_df = pd.DataFrame([row])
-    input_df = input_df[columns]
+        input_df = pd.DataFrame([row])
+        input_df = input_df[columns]
 
-    for col, le in encoders.items():
-        input_df[col] = le.transform(input_df[col].astype(str))
+        for col, le in encoders.items():
+            input_df[col] = le.transform(input_df[col].astype(str))
 
-    numeric_cols = [c for c in input_df.columns if c in scaler.feature_names_in_]
-    input_df[numeric_cols] = scaler.transform(input_df[numeric_cols])
+        numeric_cols = [c for c in input_df.columns if c in scaler.feature_names_in_]
+        input_df[numeric_cols] = scaler.transform(input_df[numeric_cols])
 
-    
-    log_prediction = model.predict(input_df)[0]
-    price = np.expm1(log_prediction)
+        log_prediction = model.predict(input_df)[0]
+        price = np.expm1(log_prediction)
 
-    st.success(f"Estimated Sale Price: ${price:,.0f}")
+        st.success(f"Estimated Sale Price: ${price:,.0f}")
+
+    except Exception as e:
+        st.error(f"Something went wrong while predicting: {e}")
