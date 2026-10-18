@@ -36,3 +36,49 @@ streamlit run app.py
 ## Built with
 
 Python, pandas, scikit-learn, Streamlit
+
+
+## Production API (FastAPI, Docker, CI)
+
+The Streamlit demo above is the front end. This section is the engineering layer around the same trained model: a validated API, automated tests, a container, and a CI pipeline.
+
+**What it does**
+
+- `POST /predict` takes the 8 house features and returns a predicted sale price.
+- `GET /health` returns `{"status": "ok"}` for uptime checks.
+- Pydantic validates every request. Out-of-range values and unknown neighborhoods return a clear `422` error instead of a crash.
+- Every request is logged as one line of JSON (method, path, status, latency).
+- The artifacts folder is configurable through the `ARTIFACTS_DIR` environment variable.
+
+**Run it locally**
+
+```
+pip install -r requirements-api.txt
+uvicorn service.api:app
+```
+
+Then open http://127.0.0.1:8000/docs for the interactive API page.
+
+**Run it in Docker**
+
+```
+docker build --load -t house-price-api .
+docker run -p 8000:8000 house-price-api
+```
+
+**Tests and CI**
+
+`pytest` runs 4 tests: one on the prediction function and three through the API, including bad-input cases. GitHub Actions runs lint (ruff), the tests, and a Docker build on every push. The Actions history includes a deliberately broken commit that failed the pipeline, and the fix that turned it green again.
+
+**Measured reliability**
+
+From a load test of 120 requests (100 valid, 20 invalid) on a local Windows laptop, sent one after another:
+
+| Metric | Result |
+| --- | --- |
+| Server errors (5xx) | 0 |
+| Invalid requests rejected cleanly (422) | 20 of 20 |
+| Median latency (`/predict`) | 91 ms |
+| p95 latency (`/predict`) | 156 ms |
+
+This is a local, single-user measurement, not a production load test. The load script is `scripts/load_test.py` and the report is `scripts/report.py`.
