@@ -35,50 +35,44 @@ streamlit run app.py
 
 ## Built with
 
-Python, pandas, scikit-learn, Streamlit
+Python, pandas, scikit-learn, Streamlit, FastAPI, Docker, GitHub Actions
 
+## Turning it into a real service
 
-## Production API (FastAPI, Docker, CI)
+The Streamlit app is a nice demo, but nothing else can talk to it. So I wrapped the same trained model in a FastAPI service and added the things that make it something you could actually deploy: tests, a Docker container, and a CI pipeline that runs on every push.
 
-The Streamlit demo above is the front end. This section is the engineering layer around the same trained model: a validated API, automated tests, a container, and a CI pipeline.
+There are two endpoints. `POST /predict` takes the same 8 features as the demo and sends back a price. `GET /health` just says everything's fine, which is what hosting platforms ping to check a service is alive.
 
-**What it does**
+## Bad input doesn't crash it
 
-- `POST /predict` takes the 8 house features and returns a predicted sale price.
-- `GET /health` returns `{"status": "ok"}` for uptime checks.
-- Pydantic validates every request. Out-of-range values and unknown neighborhoods return a clear `422` error instead of a crash.
-- Every request is logged as one line of JSON (method, path, status, latency).
-- The artifacts folder is configurable through the `ARTIFACTS_DIR` environment variable.
+Every request gets checked before it reaches the model, so a quality score of 11 comes back with a clear error instead of a stack trace. Testing also turned up a hole: a made-up neighborhood slipped past that first check and crashed the encoder with a 500. I wrote a test that reproduced it, watched it fail, then fixed it so it returns a 422 like any other bad input.
 
-**Run it locally**
+## Tests and CI
+
+There are 4 tests: one on the prediction function and three that go through the API, including the bad-input cases. On every push, GitHub Actions lints the code, runs the tests, and builds the Docker image on a clean machine.
+
+To make sure the pipeline actually does something, I broke a test on purpose and pushed it. CI went red, I fixed it, and it went green again. Both runs are still in the Actions tab.
+
+## Try it
 
 ```
 pip install -r requirements-api.txt
 uvicorn service.api:app
 ```
 
-Then open http://127.0.0.1:8000/docs for the interactive API page.
+Then open http://127.0.0.1:8000/docs for an interactive page where you can send it a house.
 
-**Run it in Docker**
+Or in Docker:
 
 ```
 docker build --load -t house-price-api .
 docker run -p 8000:8000 house-price-api
 ```
 
-**Tests and CI**
+## How fast, how reliable
 
-`pytest` runs 4 tests: one on the prediction function and three through the API, including bad-input cases. GitHub Actions runs lint (ruff), the tests, and a Docker build on every push. The Actions history includes a deliberately broken commit that failed the pipeline, and the fix that turned it green again.
+Every request is logged as one line of JSON (method, path, status, how long it took), and the numbers below come from those logs. The location of the model files can be changed with an `ARTIFACTS_DIR` environment variable, so nothing is hard-coded.
 
-**Measured reliability**
+I sent it 120 requests from my own Windows laptop, 100 good ones and 20 bad ones, one after another. It had zero server errors, rejected all 20 bad requests cleanly, and `/predict` answered in about 91 ms in the middle. 95% of requests finished in under 156 ms.
 
-From a load test of 120 requests (100 valid, 20 invalid) on a local Windows laptop, sent one after another:
-
-| Metric | Result |
-| --- | --- |
-| Server errors (5xx) | 0 |
-| Invalid requests rejected cleanly (422) | 20 of 20 |
-| Median latency (`/predict`) | 91 ms |
-| p95 latency (`/predict`) | 156 ms |
-
-This is a local, single-user measurement, not a production load test. The load script is `scripts/load_test.py` and the report is `scripts/report.py`.
+That's one person on one laptop, not a real production load, so read it as "it behaves well" and not "it scales." The scripts are in `scripts/` if you want to run it yourself.
