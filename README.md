@@ -55,6 +55,12 @@ To make sure the pipeline actually does something, I broke a test on purpose and
 
 ## Try it
 
+It's live, so you can skip the setup and try it right now: https://house-price-api-uzm1.onrender.com/docs
+
+That page lets you send it a house and see the price come back. One thing to know: it's on a free plan that goes to sleep when nobody's using it, so the first request after a quiet spell can take up to a minute while it wakes up. After that it's quick.
+
+To run it yourself:
+
 ```
 pip install -r requirements-api.txt
 uvicorn service.api:app
