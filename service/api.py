@@ -1,9 +1,38 @@
-from fastapi import FastAPI, HTTPException
+import json
+import logging
+import time
+
+from fastapi import FastAPI, HTTPException, Request
 
 from service.predict import encoders, predict_price
 from service.schemas import HouseFeatures
 
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+logger = logging.getLogger("house_api")
+
 app = FastAPI(title="House Price API")
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start = time.perf_counter()
+    status = 500
+    try:
+        response = await call_next(request)
+        status = response.status_code
+        return response
+    finally:
+        latency_ms = round((time.perf_counter() - start) * 1000, 2)
+        logger.info(
+            json.dumps(
+                {
+                    "method": request.method,
+                    "path": request.url.path,
+                    "status": status,
+                    "latency_ms": latency_ms,
+                }
+            )
+        )
 
 
 @app.get("/health")
