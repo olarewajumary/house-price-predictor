@@ -1,10 +1,16 @@
+import os
 from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
 
-ARTIFACTS_DIR = Path(__file__).resolve().parent.parent / "artifacts"
+ARTIFACTS_DIR = Path(
+    os.getenv(
+        "ARTIFACTS_DIR",
+        Path(__file__).resolve().parent.parent / "artifacts",
+    )
+)
 
 # Loaded once, when this file is first imported
 model = joblib.load(ARTIFACTS_DIR / "model.pkl")
