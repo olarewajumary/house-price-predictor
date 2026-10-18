@@ -11,6 +11,8 @@ jobs:
         with:
           python-version: "3.14"
       - name: Install packages
-        run: pip install -r requirements-api.txt pytest httpx
+        run: pip install -r requirements-api.txt pytest httpx ruff
+      - name: Lint
+        run: ruff check service tests
       - name: Run tests
         run: pytest -v

@@ -1,8 +1,8 @@
 from pathlib import Path
 
+import joblib
 import numpy as np
 import pandas as pd
-import joblib
 
 ARTIFACTS_DIR = Path(__file__).resolve().parent.parent / "artifacts"
 
