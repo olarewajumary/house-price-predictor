@@ -16,3 +16,5 @@ jobs:
         run: ruff check service tests
       - name: Run tests
         run: pytest -v
+      - name: Build Docker image
+        run: docker build -t house-price-api .
