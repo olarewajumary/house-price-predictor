@@ -7,7 +7,11 @@ from fastapi import FastAPI, HTTPException, Request
 from service.predict import encoders, predict_price
 from service.schemas import HouseFeatures
 
-logging.basicConfig(level=logging.INFO, format="%(message)s")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+    handlers=[logging.StreamHandler(), logging.FileHandler("requests.log")],
+)
 logger = logging.getLogger("house_api")
 
 app = FastAPI(title="House Price API")
